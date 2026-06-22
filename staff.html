@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Shoe Doctor · Ops Console — WhatsApp Intake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0A0A;--surface:#121212;--elevated:#161616;--hi:#1c1c1c;--line:#2E2E2E;--line-soft:#1C1C1C;
+    --white:#FFF;--text:#F4F4F4;--dim:#9C9C9C;--faint:#6a6a6a;--grey:#CFCFCF;
+    --gold:#C9A24C;--gold-bright:#E3C77D;--gold-soft:rgba(201,162,76,.10);--gold-line:rgba(201,162,76,.40);
+    --ok:#5BBF7B;--warn:#D8B45A;--err:#D97A6A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Archivo',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .blk{font-family:'Archivo Black',sans-serif;letter-spacing:-.01em}
+  a{color:var(--gold-bright)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  header{border-bottom:1px solid var(--line);background:radial-gradient(120% 200% at 85% -60%,#161310,#0A0A0A 60%)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 22px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand svg{width:22px;height:22px}
+  .brand .t{font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:700}
+  .brand .t b{color:var(--gold)}
+  .status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .dot.on{background:var(--ok)} .dot.err{background:var(--err)}
+  h1{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  main{padding:26px 0 80px}
+  .grid{display:grid;grid-template-columns:minmax(340px,1fr) 1.25fr;gap:18px;align-items:start}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:10px}
+  textarea,input,select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:14px}
+  textarea{min-height:300px;resize:vertical;line-height:1.5}
+  textarea:focus,input:focus,select:focus{outline:none;border-color:var(--gold-line)}
+  select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--faint) 50%),linear-gradient(135deg,var(--faint) 50%,transparent 50%);background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:8px;padding:11px 18px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;transition:.15s}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.gold{background:var(--gold);color:#0A0A0A} .btn.gold:hover:not(:disabled){background:var(--gold-bright)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)} .btn.ghost:hover{border-color:var(--grey)}
+  .btn.sm{padding:7px 12px;font-size:12.5px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .muted{color:var(--dim)} .faint{color:var(--faint)} .g{color:var(--gold-bright)}
+  .hint{font-size:12.5px;color:var(--faint);margin-top:10px}
+  .empty{border:1px dashed var(--line);border-radius:12px;padding:48px 24px;text-align:center;color:var(--faint)}
+  .empty .big{font-size:15px;color:var(--dim);margin-bottom:6px}
+
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:5px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cols3{display:grid;grid-template-columns:1.3fr .8fr 80px 34px;gap:8px;align-items:center}
+  .sub{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+  .sub:before{content:"";height:1px;flex:0 0 16px;background:var(--gold-line)}
+  .item{padding:10px;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;background:var(--bg)}
+  .item .req{font-size:11.5px;color:var(--faint);margin-bottom:7px}
+  .item .req b{color:var(--grey)}
+  .xbtn{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:7px;height:34px;cursor:pointer;font-size:16px}
+  .xbtn:hover{border-color:var(--err);color:var(--err)}
+  .flag{display:inline-flex;align-items:center;gap:6px;background:var(--gold-soft);border:1px solid var(--gold-line);color:var(--gold-bright);font-size:12px;border-radius:7px;padding:6px 10px;margin:4px 6px 0 0}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:3px 10px;border-radius:999px;text-transform:uppercase}
+  .pill.high{background:var(--ok);color:#06210f}.pill.medium{background:var(--warn);color:#241c05}.pill.low{background:var(--err);color:#2a0d07}
+  .pill.gold{background:var(--gold);color:#0A0A0A}
+  .toggle{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;color:var(--text);user-select:none}
+  .toggle input{width:auto}
+  .total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+  .total .n{font-family:'Archivo Black';font-size:26px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center}
+  .danger-zone{margin-top:14px;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:var(--bg)}
+  .danger-zone .warn{font-size:12px;color:var(--warn)}
+  pre{background:#080808;border:1px solid var(--line);border-radius:9px;padding:14px;overflow:auto;font-size:12px;color:var(--grey);max-height:340px;white-space:pre-wrap;word-break:break-word}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,.3);border-top-color:#0a0a0a;border-radius:50%;animation:s .7s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--elevated);border:1px solid var(--gold-line);color:var(--text);padding:12px 18px;border-radius:10px;font-size:13.5px;box-shadow:0 10px 40px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s}
+  .toast.show{opacity:1}
+  @media(max-width:880px){ .grid{grid-template-columns:1fr} textarea{min-height:200px} .cols,.cols3{grid-template-columns:1fr} .cols3 .xbtn{height:auto;padding:8px} }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="-25 232 1041.4 833" aria-hidden="true"><path fill="#C9A24C" fill-rule="evenodd" d="M84 453C84 380 151 303 247 303C356 303 421 360 421 497L442 497L438 285L418 285C405 332 333 282 257 282C117 282 34 382 34 462C34 709 418 610 418 830C418 932 353 993 257 993C123 993 53 913 42 747L25 747L29 945L29 985L48 985C63 915 108 1015 252 1015C383 1015 469 922 469 815C469 578 84 657 84 453M966.40 647C966.40 408 844.40 300 572.40 300L316.40 300L316.40 317C381.40 317 415.40 331 415.40 394L415.40 906C415.40 969 383.40 983 316.40 983L316.40 1000L600.40 1000C826.40 1000 966.40 872 966.40 647M594.40 983C489.40 983 468.40 969 468.40 907L468.40 394C468.40 331 487.40 317 572.40 317C809.40 317 909.40 443 909.40 647C909.40 880 801.40 983 594.40 983"/></svg>
+      <span class="t">The Shoe Doctor · <b>Ops Console</b></span>
+    </div>
+    <div class="status"><a href="index.html" style="color:var(--gold-bright);text-decoration:none;border:1px solid var(--gold-line);padding:6px 12px;border-radius:8px;font-size:12.5px">← WhatsApp bot (auto)</a><span class="dot" id="dot"></span><span id="statusTxt">connecting…</span></div>
+  </div>
+</header>
+
+<main><div class="wrap">
+  <h1 style="margin-bottom:18px">WhatsApp → CleanCloud intake</h1>
+  <div class="grid">
+    <!-- LEFT: paste -->
+    <div class="card">
+      <div class="lbl">1 · Paste the WhatsApp chat</div>
+      <textarea id="chat" placeholder="Paste the whole conversation here — names, services, address, pickup time, anything. The Doctor reads it and fills the order."></textarea>
+      <div class="row" style="margin-top:12px">
+        <button class="btn gold" id="extractBtn">Extract order</button>
+        <button class="btn ghost sm" id="sampleBtn">Load sample</button>
+        <button class="btn ghost sm" id="clearBtn">Clear</button>
+      </div>
+      <div class="hint" id="menuHint">Loading service menu…</div>
+    </div>
+
+    <!-- RIGHT: extracted order -->
+    <div id="result">
+      <div class="empty"><div class="big">No order yet</div>Paste a chat on the left and hit <span class="g">Extract order</span>.<br>You'll get an editable, CleanCloud-ready order in seconds.</div>
+    </div>
+  </div>
+</div></main>
+
+<div class="toast" id="toast"></div>
+
+<div id="lock" style="position:fixed;inset:0;background:#06090C;display:none;align-items:center;justify-content:center;z-index:50">
+  <div style="background:#121212;border:1px solid #2E2E2E;border-radius:14px;padding:28px 26px;width:330px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6)">
+    <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#C9A24C;font-weight:700;margin-bottom:6px">The Shoe Doctor · Ops Console</div>
+    <div style="color:#9C9C9C;font-size:13px;margin-bottom:16px">Staff access only</div>
+    <input id="lockInput" type="password" placeholder="Staff passcode" autocomplete="off" style="width:100%;background:#0A0A0A;border:1px solid #2E2E2E;border-radius:8px;padding:12px 14px;color:#F4F4F4;font-size:14px;text-align:center;font-family:inherit">
+    <button id="lockBtn" style="margin-top:12px;width:100%;background:#C9A24C;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;color:#0A0A0A;font-family:inherit">Unlock</button>
+    <div id="lockErr" style="color:#D97A6A;font-size:12px;margin-top:10px;min-height:14px"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const CFG = window.SD_CONFIG || {};
+let OPS = sessionStorage.getItem('sd_ops')||'';
+const fn = (name, body) => fetch(`${CFG.url}/functions/v1/${name}`, {
+  method:'POST',
+  headers:{ 'Authorization':`Bearer ${CFG.anon}`, 'apikey':CFG.anon, 'x-ops-key':OPS, 'content-type':'application/json' },
+  body: JSON.stringify(body),
+}).then(async r => { const t = await r.text(); let j; try{j=JSON.parse(t)}catch{j={error:t}} if(r.status===401){ sessionStorage.removeItem('sd_ops'); showLock('Passcode rejected — try again'); throw new Error('locked'); } if(!r.ok) throw new Error(j.error||t); return j; });
+
+const $ = s => document.querySelector(s);
+const el = (tag, props={}, html) => { const e=document.createElement(tag); Object.assign(e, props); if(html!=null) e.innerHTML=html; return e; };
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let MENU = [];      // [{id,name,price}]
+let ORDER = null;   // current editable order
+const toast = (m) => { const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2600); };
+
+// ---- load product menu from CleanCloud ----
+async function loadMenu(){
+  try{
+    const d = await fn('cleancloud', { op:'getProducts', params:{} });
+    const raw = d.Products || d.products || d.data || (Array.isArray(d)?d:[]);
+    MENU = raw.map(p => ({
+      id: String(p.id ?? p.ID ?? p.productID ?? p.product_id ?? ''),
+      name: p.name ?? p.Name ?? p.product ?? p.productName ?? 'Service',
+      price: Number(p.pricePerUnit ?? p.price ?? p.Price ?? p.cost ?? 0),
+    })).filter(p => p.id && p.name);
+    $('#dot').className = 'dot on';
+    $('#statusTxt').textContent = `connected · ${MENU.length} services`;
+    $('#menuHint').innerHTML = `Live menu loaded — <span class="g">${MENU.length} CleanCloud services</span> available for mapping.`;
+  }catch(e){
+    $('#dot').className='dot err'; $('#statusTxt').textContent='menu offline';
+    $('#menuHint').innerHTML = `<span style="color:var(--err)">Couldn't load the live menu</span> — extraction still works; you'll pick services manually.`;
+  }
+}
+
+// ---- extract ----
+async function extract(){
+  const text = $('#chat').value.trim();
+  if(text.length < 4){ toast('Paste a conversation first'); return; }
+  const btn = $('#extractBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Reading…';
+  try{
+    const today = new Date().toISOString().slice(0,10);
+    const { order } = await fn('intake', { text, products: MENU, today });
+    ORDER = normalize(order);
+    renderOrder();
+  }catch(e){ toast('Extract failed: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='Extract order'; }
+}
+
+function normalize(o){
+  o = o||{}; o.customer=o.customer||{}; o.pickup=o.pickup||{};
+  o.items = (o.items||[]).map(it=>({ requested:it.requested||'', productId:it.productId?String(it.productId):'', name:it.name||'', price:Number(it.price||0), quantity:Number(it.quantity||1), confident:it.confident!==false }));
+  o.missing = o.missing||[]; o.notes=o.notes||''; o.express=!!o.express; o.confidence=o.confidence||'medium';
+  return o;
+}
+
+// ---- render the editable order ----
+function renderOrder(){
+  const o = ORDER;
+  const c = el('div',{className:'card'});
+  c.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="lbl" style="margin:0">2 · Review &amp; correct</div>
+      <span class="pill ${esc(o.confidence)}">${esc(o.confidence)} confidence</span>
+    </div>
+    ${o.missing.length?`<div style="margin:10px 0 4px">${o.missing.map(m=>`<span class="flag">⚠ ${esc(m)}</span>`).join('')}</div>`:''}
+
+    <div class="sub">Customer</div>
+    <div class="cols">
+      <div class="field"><label>Name</label><input id="f_name" value="${esc(o.customer.name)}" placeholder="—"></div>
+      <div class="field"><label>Phone</label><input id="f_phone" value="${esc(o.customer.phone)}" placeholder="—"></div>
+    </div>
+    <div class="cols">
+      <div class="field"><label>Address</label><input id="f_addr" value="${esc(o.customer.address)}" placeholder="—"></div>
+      <div class="field"><label>Area</label><input id="f_area" value="${esc(o.customer.area)}" placeholder="—"></div>
+    </div>
+
+    <div class="sub">Pickup</div>
+    <div class="cols">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${esc(o.pickup.date)}"></div>
+      <div class="field"><label>Time window</label><input id="f_time" value="${esc(o.pickup.timeWindow)}" placeholder="e.g. after 6pm"></div>
+    </div>
+    <label class="toggle"><input type="checkbox" id="f_express" ${o.express?'checked':''}> Express / same-day (urgent)</label>
+
+    <div class="sub">Items <span style="color:var(--faint);font-weight:400;text-transform:none;letter-spacing:0;margin-left:4px">· service · price · qty</span></div>
+    <div id="items"></div>
+    <button class="btn ghost sm" id="addItem" style="margin-top:2px">+ Add item</button>
+
+    <div class="field" style="margin-top:16px"><label>Notes for the workshop</label><textarea id="f_notes" style="min-height:70px">${esc(o.notes)}</textarea></div>
+
+    <div class="total"><span class="muted">Order total</span><span class="n" id="total">AED 0</span></div>
+
+    <div class="actions">
+      <button class="btn ghost" id="previewBtn">Preview CleanCloud payload</button>
+      <button class="btn gold" id="createBtn" disabled>Create in CleanCloud</button>
+    </div>
+    <div class="danger-zone">
+      <label class="toggle"><input type="checkbox" id="liveOk"> <span class="warn">I've reviewed this — allow creating a <b>live</b> order in CleanCloud</span></label>
+    </div>
+    <div id="payload"></div>`;
+  $('#result').innerHTML=''; $('#result').appendChild(c);
+  renderItems(); recompute();
+
+  // wire fields → state
+  const bind = (id,path)=>{ const e=$('#'+id); e.addEventListener('input',()=>{ setPath(o,path,e.type==='checkbox'?e.checked:e.value); recompute(); }); };
+  bind('f_name','customer.name'); bind('f_phone','customer.phone'); bind('f_addr','customer.address'); bind('f_area','customer.area');
+  bind('f_date','pickup.date'); bind('f_time','pickup.timeWindow'); bind('f_express','express'); bind('f_notes','notes');
+  $('#addItem').onclick=()=>{ o.items.push({requested:'(added)',productId:'',name:'',price:0,quantity:1,confident:true}); renderItems(); recompute(); };
+  $('#previewBtn').onclick=showPayload;
+  $('#liveOk').onchange=e=>{ $('#createBtn').disabled=!e.target.checked; };
+  $('#createBtn').onclick=createOrder;
+}
+
+function renderItems(){
+  const box=$('#items'); box.innerHTML='';
+  ORDER.items.forEach((it,i)=>{
+    const opts = ['<option value="">— pick service —</option>'].concat(
+      MENU.map(m=>`<option value="${m.id}" ${m.id===it.productId?'selected':''}>${esc(m.name)} · AED ${m.price}</option>`)).join('');
+    const manual = it.productId && !MENU.find(m=>m.id===it.productId);
+    const row=el('div',{className:'item'});
+    row.innerHTML=`
+      ${it.requested?`<div class="req">asked: <b>${esc(it.requested)}</b>${it.confident?'':' · <span style="color:var(--warn)">needs a match</span>'}</div>`:''}
+      <div class="cols3">
+        <select data-i="${i}" class="i_prod">${opts}${manual?`<option value="${esc(it.productId)}" selected>${esc(it.name)} (manual)</option>`:''}</select>
+        <input class="i_price" data-i="${i}" type="number" value="${it.price}" title="price">
+        <input class="i_qty" data-i="${i}" type="number" min="1" value="${it.quantity}" title="qty">
+        <button class="xbtn" data-i="${i}" title="remove">×</button>
+      </div>`;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('.i_prod').forEach(s=>s.onchange=e=>{ const it=ORDER.items[+e.target.dataset.i]; const m=MENU.find(x=>x.id===e.target.value); if(m){it.productId=m.id;it.name=m.name;it.price=m.price;} else {it.productId='';} renderItems(); recompute(); });
+  box.querySelectorAll('.i_price').forEach(s=>s.oninput=e=>{ ORDER.items[+e.target.dataset.i].price=Number(e.target.value||0); recompute(); });
+  box.querySelectorAll('.i_qty').forEach(s=>s.oninput=e=>{ ORDER.items[+e.target.dataset.i].quantity=Number(e.target.value||1); recompute(); });
+  box.querySelectorAll('.xbtn').forEach(s=>s.onclick=e=>{ ORDER.items.splice(+e.target.dataset.i,1); renderItems(); recompute(); });
+}
+
+function recompute(){ const t=ORDER.items.reduce((s,it)=>s+(it.price*it.quantity),0); const e=$('#total'); if(e) e.textContent='AED '+t.toLocaleString(); }
+function setPath(o,p,v){ const k=p.split('.'); let x=o; for(let i=0;i<k.length-1;i++) x=x[k[i]]; x[k[k.length-1]]=v; }
+
+// ---- CleanCloud addOrder payload (mirrors the app's orderToAddOrderPayload) ----
+function buildPayload(customerID){
+  const o=ORDER;
+  return {
+    customerID: customerID ?? '«new customer created on submit»',
+    products: o.items.filter(it=>it.productId).map(it=>({ id:it.productId, price:it.price, quantity:it.quantity, pieces:1, name:it.name })),
+    pickupDate: o.pickup.date||'', pickupTime: o.pickup.timeWindow||'',
+    express: o.express,
+    note: `${o.notes}${o.customer.area?` · Area: ${o.customer.area}`:''}`.trim(),
+    source: 'whatsapp',
+  };
+}
+function showPayload(){
+  const p=buildPayload(); const unmatched=ORDER.items.filter(it=>!it.productId).length;
+  $('#payload').innerHTML = `<div class="sub" style="margin-top:18px">CleanCloud payload · dry run</div>
+    ${unmatched?`<div class="flag" style="margin-bottom:8px">⚠ ${unmatched} item(s) without a service — pick one or they'll be skipped</div>`:''}
+    <pre>${esc(JSON.stringify(p,null,2))}</pre>
+    <div class="hint">Customer (${esc(ORDER.customer.name||'—')}, ${esc(ORDER.customer.phone||'—')}) is created/looked up in CleanCloud on submit, then the order is added with <span class="g">source = whatsapp</span> for attribution.</div>`;
+  $('#payload').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ---- create (gated) ----
+async function createOrder(){
+  if(!confirm('Create a LIVE order in CleanCloud for '+(ORDER.customer.name||'this customer')+'?')) return;
+  const btn=$('#createBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Creating…';
+  try{
+    const c=ORDER.customer;
+    const cust = await fn('cleancloud', { op:'addCustomer', params:{ name:c.name||'WhatsApp customer', phone:c.phone||'', address:c.address||'' } });
+    const customerID = String(cust.id ?? cust.customerID ?? cust.ID ?? '');
+    if(!customerID) throw new Error('no customer id returned');
+    const res = await fn('cleancloud', { op:'addOrder', params: buildPayload(customerID) });
+    const orderId = res.id ?? res.orderID ?? res.ID ?? '(created)';
+    toast('✓ Created CleanCloud order '+orderId);
+    $('#payload').innerHTML = `<div class="sub" style="margin-top:18px">Created ✓</div><pre>${esc(JSON.stringify(res,null,2))}</pre>`;
+  }catch(e){ toast('Create failed: '+e.message); }
+  finally{ btn.innerHTML='Create in CleanCloud'; btn.disabled=!$('#liveOk').checked; }
+}
+
+// ---- sample ----
+const SAMPLE = `Customer: Hi! Need my sneakers cleaned please. 2 pairs - my white Air Force 1s and Jordan 4s. The AF1s have really yellow soles can u fix that too. Also my wife has a small Gucci bag that needs cleaning.
+Doctor: Of course! Where shall we collect from?
+Customer: Dubai Marina, Marina Gate tower 1. Tomorrow evening after 6 works. Name is Ahmed, number is 0529876543. Need it back fast if possible, got a trip Friday`;
+
+$('#extractBtn').onclick=extract;
+$('#sampleBtn').onclick=()=>{ $('#chat').value=SAMPLE; };
+$('#clearBtn').onclick=()=>{ $('#chat').value=''; $('#result').innerHTML='<div class="empty"><div class="big">No order yet</div>Paste a chat on the left and hit Extract order.</div>'; ORDER=null; };
+function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg) document.getElementById('lockErr').textContent=msg; setTimeout(()=>document.getElementById('lockInput').focus(),50); }
+function unlock(){ const v=document.getElementById('lockInput').value.trim(); if(!v) return; OPS=v; sessionStorage.setItem('sd_ops',v); document.getElementById('lock').style.display='none'; loadMenu(); }
+document.getElementById('lockBtn').onclick=unlock;
+document.getElementById('lockInput').addEventListener('keydown',e=>{ if(e.key==='Enter') unlock(); });
+if(OPS) loadMenu(); else showLock();
+</script>
+</body>
+</html>
