@@ -90,7 +90,9 @@
 <script>
 const CFG=window.SD_CONFIG||{};
 let OPS=sessionStorage.getItem('sd_ops')||'';
-const intake=(text,images)=>fetch(`${CFG.url}/functions/v1/intake`,{method:'POST',headers:{'Authorization':`Bearer ${CFG.anon}`,'apikey':CFG.anon,'x-ops-key':OPS,'content-type':'application/json'},body:JSON.stringify({text,products:MENU,today:new Date().toISOString().slice(0,10),images:(images&&images.length)?images:undefined})}).then(async r=>{ if(r.status===401){ sessionStorage.removeItem('sd_ops'); showLock('Passcode rejected — try again'); throw new Error('locked'); } return r.json(); });
+let matched=null;   // returning customer matched by phone in our directory (reused, never duplicated)
+const intake=(text,images)=>fetch(`${CFG.url}/functions/v1/intake`,{method:'POST',headers:{'Authorization':`Bearer ${CFG.anon}`,'apikey':CFG.anon,'x-ops-key':OPS,'content-type':'application/json'},body:JSON.stringify({text,products:MENU,today:new Date().toISOString().slice(0,10),images:(images&&images.length)?images:undefined,customer:matched||undefined})}).then(async r=>{ if(r.status===401){ sessionStorage.removeItem('sd_ops'); showLock('Passcode rejected — try again'); throw new Error('locked'); } return r.json(); });
+const lookupCustomer=(phone)=>fetch(`${CFG.url}/functions/v1/customers`,{method:'POST',headers:{'Authorization':`Bearer ${CFG.anon}`,'apikey':CFG.anon,'x-ops-key':OPS,'content-type':'application/json'},body:JSON.stringify({op:'lookup',phone})}).then(r=>r.json()).catch(()=>null);
 const getProducts=()=>fetch(`${CFG.url}/functions/v1/cleancloud`,{method:'POST',headers:{'Authorization':`Bearer ${CFG.anon}`,'apikey':CFG.anon,'content-type':'application/json'},body:JSON.stringify({op:'getProducts',params:{}})}).then(r=>r.json());
 
 const $=s=>document.querySelector(s);
@@ -129,6 +131,11 @@ function unlock(){ const v=document.getElementById('lockInput').value.trim(); if
 
 async function botTurn(){
   busy=true; $('#send').disabled=true; $('#presence').textContent='typing…';
+  // recognise a returning customer as soon as we know their number (the real Cloud API knows it from the sender)
+  if(!matched && lastOrder && lastOrder.customer && lastOrder.customer.phone){
+    const r=await lookupCustomer(lastOrder.customer.phone);
+    if(r && r.found && r.customer){ matched=r.customer; sys('↩ Returning customer recognised — '+(matched.name||'')+' · will reuse CleanCloud #'+(matched.cleanCloudId||'—')+' (no duplicate)'); }
+  }
   const t=typing();
   try{
     const res=await intake(transcript.join('\n'), convoImages);
@@ -148,14 +155,15 @@ function book(){
   setTimeout(()=>{
     t.remove();
     const total=(o.items||[]).reduce((s,it)=>s+(Number(it.price||0)*Number(it.quantity||1)),0);
-    const payload={ customerID:'«created on book»', source:'whatsapp',
+    const reused = !!(matched && matched.cleanCloudId);
+    const payload={ customerID: reused?matched.cleanCloudId:'«new customer created on book»', source:'whatsapp',
       products:(o.items||[]).filter(it=>it.productId).map(it=>({id:it.productId,price:it.price,quantity:it.quantity,pieces:1,name:it.name})),
       pickupDate:o.pickup?.date||'', pickupSlot:o.pickup?.timeWindow||'', express:!!o.express, total };
     bubble("Perfect, you're all booked! 🎉 Your receipt and payment link are on the way by email. We'll collect on schedule and message you the moment your pairs are ready ✨","in");
     const c=document.createElement('div'); c.className='card';
-    c.innerHTML=`<div class="h">↳ Created in CleanCloud · source: whatsapp</div>Order for <b>${esc(o.customer?.name||'customer')}</b> · AED ${total}<pre>${esc(JSON.stringify(payload,null,2))}</pre>`;
+    c.innerHTML=`<div class="h">↳ ${reused?'Order added to existing customer #'+esc(matched.cleanCloudId):'Created in CleanCloud'} · source: whatsapp</div>Order for <b>${esc(o.customer?.name||'customer')}</b> · AED ${total}<pre>${esc(JSON.stringify(payload,null,2))}</pre>`;
     chat.appendChild(c); scroll();
-    sys('Order pushed to CleanCloud — zero manual entry  (demo: dry-run payload shown)', true);
+    sys(reused?'Pushed to CleanCloud under their existing record — no duplicate, zero manual entry  (demo: dry-run)':'Order pushed to CleanCloud — zero manual entry  (demo: dry-run payload shown)', true);
     renderQuick();
   },900);
 }

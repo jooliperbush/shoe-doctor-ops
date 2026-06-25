@@ -169,6 +169,7 @@ async function extract(){
     const { order } = await fn('intake', { text, products: MENU, today });
     ORDER = normalize(order);
     renderOrder();
+    matchCustomer();   // recognise returning customers by phone (async; updates the card)
   }catch(e){ toast('Extract failed: '+e.message); }
   finally{ btn.disabled=false; btn.textContent='Extract order'; }
 }
@@ -178,6 +179,32 @@ function normalize(o){
   o.items = (o.items||[]).map(it=>({ requested:it.requested||'', productId:it.productId?String(it.productId):'', name:it.name||'', price:Number(it.price||0), quantity:Number(it.quantity||1), confident:it.confident!==false }));
   o.missing = o.missing||[]; o.notes=o.notes||''; o.express=!!o.express; o.confidence=o.confidence||'medium';
   return o;
+}
+
+// ---- repeat-customer match (CleanCloud can't search by phone → our directory) ----
+const fmtMonth = (iso) => { try{ return new Date(iso).toLocaleString('en-GB',{month:'short',year:'numeric'}); }catch(_){ return ''; } };
+async function matchCustomer(){
+  if(!ORDER) return;
+  ORDER._match=null; ORDER._filled=[];
+  const phone=(ORDER.customer.phone||'').trim();
+  if(phone.replace(/\D/g,'').length < 7){ return; }   // not enough of a number to match on
+  try{
+    const { found, customer } = await fn('customers', { op:'lookup', phone });
+    if(found && customer){
+      ORDER._match = customer;
+      // pre-fill ONLY empty fields from their saved record — never clobber fresh info
+      const c=ORDER.customer, filled=[]; let emailFilled=false;
+      if(!String(c.name||'').trim()    && customer.name){    c.name=customer.name;       filled.push('name'); }
+      if(!String(c.address||'').trim() && customer.address){ c.address=customer.address; filled.push('address'); }
+      if(!String(c.area||'').trim()    && customer.area){    c.area=customer.area;       filled.push('area'); }
+      if(!String(c.email||'').trim()   && customer.email){   c.email=customer.email;     emailFilled=true; }   // carried for the order, not shown
+      ORDER._filled=filled;
+      // clear "missing X" warnings for anything we just recovered from their record
+      const recovered = filled.concat(emailFilled?['email']:[]);
+      if(recovered.length) ORDER.missing = (ORDER.missing||[]).filter(m => !recovered.some(k => String(m).toLowerCase().includes(k)));
+      renderOrder();
+    }
+  }catch(_){ /* directory unavailable → treat as a new customer, never block intake */ }
 }
 
 // ---- render the editable order ----
@@ -190,6 +217,10 @@ function renderOrder(){
       <span class="pill ${esc(o.confidence)}">${esc(o.confidence)} confidence</span>
     </div>
     ${o.missing.length?`<div style="margin:10px 0 4px">${o.missing.map(m=>`<span class="flag">⚠ ${esc(m)}</span>`).join('')}</div>`:''}
+    ${o._match?`<div style="margin:10px 0 2px;padding:10px 12px;border:1px solid var(--gold-line,rgba(201,162,76,.4));background:var(--gold-soft,rgba(201,162,76,.1));border-radius:9px;font-size:13px">
+      <b style="color:var(--gold-bright,#E3C77D)">↩ Returning customer</b> · ${o._match.orderCount||0} prior order${o._match.orderCount===1?'':'s'}${o._match.lastOrderAt?` · last ${esc(fmtMonth(o._match.lastOrderAt))}`:''}
+      ${o._match.cleanCloudId?`<div style="color:var(--dim,#9c9c9c);margin-top:3px">Reusing their existing CleanCloud record <b>#${esc(o._match.cleanCloudId)}</b> — no duplicate.${o._filled&&o._filled.length?` Filled <span class="g">${esc(o._filled.join(', '))}</span> from their last order.`:''}</div>`:`<div style="color:var(--dim,#9c9c9c);margin-top:3px">Known number, no CleanCloud id on file yet — a record will be created and linked.</div>`}
+    </div>`:''}
 
     <div class="sub">Customer</div>
     <div class="cols">
@@ -231,6 +262,7 @@ function renderOrder(){
   const bind = (id,path)=>{ const e=$('#'+id); e.addEventListener('input',()=>{ setPath(o,path,e.type==='checkbox'?e.checked:e.value); recompute(); }); };
   bind('f_name','customer.name'); bind('f_phone','customer.phone'); bind('f_addr','customer.address'); bind('f_area','customer.area');
   bind('f_date','pickup.date'); bind('f_time','pickup.timeWindow'); bind('f_express','express'); bind('f_notes','notes');
+  $('#f_phone').addEventListener('change', ()=>matchCustomer());   // re-check the directory if staff correct the number
   $('#addItem').onclick=()=>{ o.items.push({requested:'(added)',productId:'',name:'',price:0,quantity:1,confident:true}); renderItems(); recompute(); };
   $('#previewBtn').onclick=showPayload;
   $('#liveOk').onchange=e=>{ $('#createBtn').disabled=!e.target.checked; };
@@ -290,13 +322,21 @@ async function createOrder(){
   const btn=$('#createBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Creating…';
   try{
     const c=ORDER.customer;
-    const cust = await fn('cleancloud', { op:'addCustomer', params:{ name:c.name||'WhatsApp customer', phone:c.phone||'', address:c.address||'' } });
-    const customerID = String(cust.id ?? cust.customerID ?? cust.ID ?? '');
-    if(!customerID) throw new Error('no customer id returned');
+    let customerID='', reused=false;
+    if(ORDER._match && ORDER._match.cleanCloudId){
+      customerID=String(ORDER._match.cleanCloudId); reused=true;       // returning customer → reuse, never duplicate
+    } else {
+      // CleanCloud field names: customerName / customerTel / customerEmail / customerAddress
+      const cust = await fn('cleancloud', { op:'addCustomer', params:{ customerName:c.name||'WhatsApp customer', customerTel:c.phone||'', customerEmail:c.email||'', customerAddress:c.address||'' } });
+      customerID=String(cust.id ?? cust.customerID ?? cust.ID ?? '');
+      if(!customerID) throw new Error('no customer id returned');
+    }
     const res = await fn('cleancloud', { op:'addOrder', params: buildPayload(customerID) });
     const orderId = res.id ?? res.orderID ?? res.ID ?? '(created)';
-    toast('✓ Created CleanCloud order '+orderId);
-    $('#payload').innerHTML = `<div class="sub" style="margin-top:18px">Created ✓</div><pre>${esc(JSON.stringify(res,null,2))}</pre>`;
+    // remember this number → CleanCloud id for next time (and bump their order count)
+    try{ await fn('customers', { op:'remember', phone:c.phone||'', cleanCloudId:customerID, name:c.name, email:c.email, address:c.address, area:c.area, countedOrder:true }); }catch(_){}
+    toast((reused?'✓ Reused customer #'+customerID+' · order ':'✓ Created CleanCloud order ')+orderId);
+    $('#payload').innerHTML = `<div class="sub" style="margin-top:18px">${reused?'Order added to existing customer #'+esc(customerID)+' ✓':'Created ✓'}</div><pre>${esc(JSON.stringify(res,null,2))}</pre>`;
   }catch(e){ toast('Create failed: '+e.message); }
   finally{ btn.innerHTML='Create in CleanCloud'; btn.disabled=!$('#liveOk').checked; }
 }
