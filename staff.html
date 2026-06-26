@@ -117,7 +117,7 @@
   <div style="background:#121212;border:1px solid #2E2E2E;border-radius:14px;padding:28px 26px;width:330px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6)">
     <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#C9A24C;font-weight:700;margin-bottom:6px">The Shoe Doctor · Ops Console</div>
     <div style="color:#9C9C9C;font-size:13px;margin-bottom:16px">Staff access only</div>
-    <input id="lockInput" type="password" placeholder="Staff passcode" autocomplete="off" style="width:100%;background:#0A0A0A;border:1px solid #2E2E2E;border-radius:8px;padding:12px 14px;color:#F4F4F4;font-size:14px;text-align:center;font-family:inherit">
+    <input id="lockInput" type="password" placeholder="Staff passcode" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" style="width:100%;background:#0A0A0A;border:1px solid #2E2E2E;border-radius:8px;padding:12px 14px;color:#F4F4F4;font-size:14px;text-align:center;font-family:inherit">
     <button id="lockBtn" style="margin-top:12px;width:100%;background:#C9A24C;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;color:#0A0A0A;font-family:inherit">Unlock</button>
     <div id="lockErr" style="color:#D97A6A;font-size:12px;margin-top:10px;min-height:14px"></div>
   </div>
@@ -349,7 +349,7 @@ Customer: Dubai Marina, Marina Gate tower 1. Tomorrow evening after 6 works. Nam
 $('#extractBtn').onclick=extract;
 $('#sampleBtn').onclick=()=>{ $('#chat').value=SAMPLE; };
 $('#clearBtn').onclick=()=>{ $('#chat').value=''; $('#result').innerHTML='<div class="empty"><div class="big">No order yet</div>Paste a chat on the left and hit Extract order.</div>'; ORDER=null; };
-function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg) document.getElementById('lockErr').textContent=msg; setTimeout(()=>document.getElementById('lockInput').focus(),50); }
+function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg){ document.getElementById('lockErr').textContent=msg; document.getElementById('lockInput').value=''; } setTimeout(()=>document.getElementById('lockInput').focus(),50); }
 function unlock(){ const v=document.getElementById('lockInput').value.trim(); if(!v) return; OPS=v; sessionStorage.setItem('sd_ops',v); document.getElementById('lock').style.display='none'; loadMenu(); }
 document.getElementById('lockBtn').onclick=unlock;
 document.getElementById('lockInput').addEventListener('keydown',e=>{ if(e.key==='Enter') unlock(); });

@@ -89,7 +89,7 @@
   <div style="background:#111B21;border:1px solid #1c2630;border-radius:14px;padding:28px 26px;width:330px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6)">
     <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#C9A24C;font-weight:700;margin-bottom:6px">The Shoe Doctor · Ops Console</div>
     <div style="color:#8696A0;font-size:13px;margin-bottom:16px">Staff access only</div>
-    <input id="lockInput" type="password" placeholder="Staff passcode" autocomplete="off" style="width:100%;background:#2A3942;border:none;border-radius:8px;padding:12px 14px;color:#E9EDEF;font-size:14px;text-align:center;font-family:inherit">
+    <input id="lockInput" type="password" placeholder="Staff passcode" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" data-1p-ignore="true" data-lpignore="true" style="width:100%;background:#2A3942;border:none;border-radius:8px;padding:12px 14px;color:#E9EDEF;font-size:14px;text-align:center;font-family:inherit">
     <button id="lockBtn" style="margin-top:12px;width:100%;background:#C9A24C;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;color:#06090C;font-family:inherit">Unlock</button>
     <div id="lockErr" style="color:#D97A6A;font-size:12px;margin-top:10px;min-height:14px"></div>
   </div>
@@ -135,7 +135,7 @@ async function start(){
   renderQuick();
 }
 // staff passcode gate
-function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg) document.getElementById('lockErr').textContent=msg; setTimeout(()=>document.getElementById('lockInput').focus(),50); }
+function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg){ document.getElementById('lockErr').textContent=msg; document.getElementById('lockInput').value=''; } setTimeout(()=>document.getElementById('lockInput').focus(),50); }
 function unlock(){ const v=document.getElementById('lockInput').value.trim(); if(!v) return; OPS=v; sessionStorage.setItem('sd_ops',v); document.getElementById('lock').style.display='none'; start(); }
 
 async function botTurn(){
