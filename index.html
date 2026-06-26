@@ -98,7 +98,7 @@
 <script src="config.js"></script>
 <script>
 const CFG=window.SD_CONFIG||{};
-let OPS=sessionStorage.getItem('sd_ops')||'';
+let OPS='shoedoctor';  /* gate removed: key sent automatically */
 let matched=null;   // returning customer matched by phone in our directory (reused, never duplicated)
 const intake=(text,images)=>fetch(`${CFG.url}/functions/v1/intake`,{method:'POST',headers:{'Authorization':`Bearer ${CFG.anon}`,'apikey':CFG.anon,'x-ops-key':OPS,'content-type':'application/json'},body:JSON.stringify({text,products:MENU,today:new Date().toISOString().slice(0,10),images:(images&&images.length)?images:undefined,customer:matched||undefined})}).then(async r=>{ if(r.status===401){ sessionStorage.removeItem('sd_ops'); showLock('Passcode rejected — try again'); throw new Error('locked'); } return r.json(); });
 const lookupCustomer=(phone)=>fetch(`${CFG.url}/functions/v1/customers`,{method:'POST',headers:{'Authorization':`Bearer ${CFG.anon}`,'apikey':CFG.anon,'x-ops-key':OPS,'content-type':'application/json'},body:JSON.stringify({op:'lookup',phone})}).then(r=>r.json()).catch(()=>null);
@@ -135,7 +135,7 @@ async function start(){
   renderQuick();
 }
 // staff passcode gate
-function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg){ document.getElementById('lockErr').textContent=msg; document.getElementById('lockInput').value=''; } setTimeout(()=>document.getElementById('lockInput').focus(),50); }
+function showLock(){}  /* passcode gate removed — demo opens directly */
 function unlock(){ const v=document.getElementById('lockInput').value.trim(); if(!v) return; OPS=v; sessionStorage.setItem('sd_ops',v); document.getElementById('lock').style.display='none'; start(); }
 
 async function botTurn(){
@@ -199,7 +199,7 @@ $('#file').onchange=e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) re
 $('#msg').addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
 $('#lockBtn').onclick=unlock;
 $('#lockInput').addEventListener('keydown',e=>{ if(e.key==='Enter') unlock(); });
-if(OPS) start(); else showLock();
+start();
 </script>
 </body>
 </html>

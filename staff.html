@@ -126,7 +126,7 @@
 <script src="config.js"></script>
 <script>
 const CFG = window.SD_CONFIG || {};
-let OPS = sessionStorage.getItem('sd_ops')||'';
+let OPS = 'shoedoctor';  /* gate removed: key sent automatically */
 const fn = (name, body) => fetch(`${CFG.url}/functions/v1/${name}`, {
   method:'POST',
   headers:{ 'Authorization':`Bearer ${CFG.anon}`, 'apikey':CFG.anon, 'x-ops-key':OPS, 'content-type':'application/json' },
@@ -349,11 +349,11 @@ Customer: Dubai Marina, Marina Gate tower 1. Tomorrow evening after 6 works. Nam
 $('#extractBtn').onclick=extract;
 $('#sampleBtn').onclick=()=>{ $('#chat').value=SAMPLE; };
 $('#clearBtn').onclick=()=>{ $('#chat').value=''; $('#result').innerHTML='<div class="empty"><div class="big">No order yet</div>Paste a chat on the left and hit Extract order.</div>'; ORDER=null; };
-function showLock(msg){ const l=document.getElementById('lock'); l.style.display='flex'; if(msg){ document.getElementById('lockErr').textContent=msg; document.getElementById('lockInput').value=''; } setTimeout(()=>document.getElementById('lockInput').focus(),50); }
+function showLock(){}  /* passcode gate removed — demo opens directly */
 function unlock(){ const v=document.getElementById('lockInput').value.trim(); if(!v) return; OPS=v; sessionStorage.setItem('sd_ops',v); document.getElementById('lock').style.display='none'; loadMenu(); }
 document.getElementById('lockBtn').onclick=unlock;
 document.getElementById('lockInput').addEventListener('keydown',e=>{ if(e.key==='Enter') unlock(); });
-if(OPS) loadMenu(); else showLock();
+loadMenu();
 </script>
 </body>
 </html>
